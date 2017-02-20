@@ -32,8 +32,8 @@ def audio_to_mfcc(audio_path):
     return mfccs
 
 
-def tag_frames(mfccs):
-    kmeans = KMeans(n_clusters=4, random_state=0).fit(mfccs)
+def tag_frames(mfccs, centroids_num):
+    kmeans = KMeans(n_clusters=centroids_num, random_state=0).fit(mfccs)
     return kmeans.labels_
 
 
@@ -88,12 +88,14 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     :param test_track: path to an audio file with consistent instruments to test prediction.
     """
     train_mfccs = audio_to_mfcc(train_track)
-    labels = tag_frames(train_mfccs)
-    model = build_model()
+    labels = tag_frames(train_mfccs, instruments_num)
+    model = build_model(64)
     fit(model, train_mfccs, labels)
     if test_track:
         print model.evaluate(test_track, labels, batch_size=32)
     return model.predict_classes(prediction_track, batch_size=32)
 
 if __name__ == "__main__":
-     print main(*sys.argv[1:])
+     train_track, prediction_track, instruments_num = sys.argv[1:]
+     test_track = sys.argv[4] if len(sys.argv) == 5 else None
+     print main(train_track, prediction_track, int(instruments_num), test_track)
