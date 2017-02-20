@@ -11,25 +11,20 @@ from pylab import show, plot
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 
+def __to_mfcc_coeff(frame):
+    window = std.Windowing(type='hann')
+    spectrum = std.Spectrum()
+    mfcc = std.MFCC()
+
+    return mfcc(spectrum(window(frame)))[1]
+
 
 def audio_to_mfcc(audio_path):
     loader = std.MonoLoader(filename=audio_path)
     audio = loader()
 
-    w = std.Windowing(type='hann')
-    spectrum = std.Spectrum()
-    mfcc = std.MFCC()
-
-    mfccs = []
-    frameSize = 1024
-    hopSize = 512
-
-    for fstart in range(0, len(audio)-frameSize, hopSize):
-        frame = audio[fstart:fstart+frameSize]
-        mfcc_bands, mfcc_coeffs = mfcc(spectrum(w(frame)))
-        mfccs.append(mfcc_coeffs)
-
-    return mfccs
+    frame_gen = std.FrameGenerator(audio, frameSize=2048, hopSize=1024)
+    return essentia.array(map(__to_mfcc_coeff, frame_gen)).T
 
 
 def tag_frames(mfccs, centroids_num):
@@ -62,12 +57,12 @@ def make_consistent_samples(labels, track_duration):
     return samples
 
 
-def build_model(output_dim=64, input_dim=128):
+def build_model(output_dim, input_dim=None, input_shape=None):
     """Build keras model"""
     model = Sequential()
-    model.add(Dense(output_dim=output_dim, input_dim=input_dim))
+    model.add(Dense(output_dim=output_dim, input_dim=input_dim, input_shape=input_shape))
     model.add(Activation("relu"))
-    model.add(Dense(output_dim=10))
+    model.add(Dense(output_dim=13, input_shape=(None, 1)))
     model.add(Activation("softmax"))
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
@@ -89,7 +84,7 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     """
     train_mfccs = audio_to_mfcc(train_track)
     labels = tag_frames(train_mfccs, instruments_num)
-    model = build_model(64)
+    model = build_model(output_dim=13, input_dim=13)
     fit(model, train_mfccs, labels)
     if test_track:
         print model.evaluate(test_track, labels, batch_size=32)
