@@ -8,8 +8,8 @@ import essentia.streaming
 from sklearn.cluster import KMeans
 import numpy as np
 from pylab import show, plot
-from keras.models import import Sequential
-from keras.layers import import Dense, Activation
+from keras.models import Sequential
+from keras.layers import Dense, Activation
 
 
 def audio_to_mfcc(audio_path):
@@ -34,14 +34,14 @@ def audio_to_mfcc(audio_path):
 
 def tag_frames(mfccs):
     kmeans = KMeans(n_clusters=4, random_state=0).fit(mfccs)
-    # return mfcc frames tagged with appropriate clusters
+    return kmeans.labels_
 
 
-def make_consistent_samples(labels):
+def make_consistent_samples(labels, track_duration):
     """Determine continuous consistent intervals of audio with the same tag.
 
     Could be needed for manual analysis."""
-    track_duration = 449.
+    track_duration = float(track_duration)
     frame_duration = track_duration / labels.shape[0]
 
     samples = []
@@ -72,5 +72,28 @@ def build_model(output_dim=64, input_dim=128):
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
 
+
 def fit(model, mfccs, labels):
     model.fit(mfccs, labels, nb_epoch=5, batch_size=32)
+
+
+def predict(model, mfccs):
+    model.predict_classes(mfccs, batch_size=32)
+
+
+def main(train_track, prediction_track, instruments_num, test_track=None):
+    """
+    :param train_track: path to an audio file with known number of instruments in compositions
+    :param train_track_annotaion: number of centroids
+    :param test_track: path to an audio file with consistent instruments to test prediction.
+    """
+    train_mfccs = audio_to_mfcc(train_track)
+    labels = tag_frames(train_mfccs)
+    model = build_model()
+    fit(model, train_mfccs, labels)
+    if test_track:
+        print model.evaluate(test_track, labels, batch_size=32)
+    return model.predict_classes(prediction_track, batch_size=32)
+
+if __name__ == "__main__":
+     print main(*sys.argv[1:])
