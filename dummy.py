@@ -23,8 +23,9 @@ def audio_to_mfcc(audio_path):
     loader = std.MonoLoader(filename=audio_path)
     audio = loader()
 
-    frame_gen = std.FrameGenerator(audio, frameSize=2048, hopSize=1024)
-    return essentia.array(map(__to_mfcc_coeff, frame_gen)).T
+    frame_gen = std.FrameGenerator(audio, frameSize=2048, hopSize=512)
+    mfcc_array = essentia.array(map(__to_mfcc_coeff, frame_gen)).T
+    return mfcc_array.reshape(tuple(reversed(mfcc_array.shape)))
 
 
 def tag_frames(mfccs, centroids_num):
@@ -60,9 +61,9 @@ def make_consistent_samples(labels, track_duration):
 def build_model(output_dim, input_dim=None, input_shape=None):
     """Build keras model"""
     model = Sequential()
-    model.add(Dense(output_dim=output_dim, input_dim=input_dim, input_shape=input_shape))
+    model.add(Dense(output_dim=13, input_dim=13))
     model.add(Activation("relu"))
-    model.add(Dense(output_dim=13, input_shape=(None, 1)))
+    model.add(Dense(output_dim=13))
     model.add(Activation("softmax"))
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
@@ -82,9 +83,9 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     :param train_track_annotaion: number of centroids
     :param test_track: path to an audio file with consistent instruments to test prediction.
     """
-    train_mfccs = audio_to_mfcc(train_track)
-    labels = tag_frames(train_mfccs, instruments_num)
-    model = build_model(output_dim=13, input_dim=13)
+    train_mfccs = np.zeros((256, 13))#audio_to_mfcc(train_track)
+    labels = np.zeros((256, 13))#tag_frames(train_mfccs, instruments_num)
+    model = build_model(output_dim=13)
     fit(model, train_mfccs, labels)
     if test_track:
         print model.evaluate(test_track, labels, batch_size=32)
