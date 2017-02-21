@@ -27,10 +27,16 @@ def audio_to_mfcc(audio_path):
     mfcc_array = essentia.array(map(__to_mfcc_coeff, frame_gen)).T
     return mfcc_array.reshape(tuple(reversed(mfcc_array.shape)))
 
+def __one_hot_shot(num):
+    def shot(idx):
+        label = np.zeros(num)
+        np.put(label, idx, 1)
+        return label
+    return shot
 
 def tag_frames(mfccs, centroids_num):
     kmeans = KMeans(n_clusters=centroids_num, random_state=0).fit(mfccs)
-    return np.array([[i]*mfccs.shape[1] for i in kmeans.labels_])
+    return np.array(map(__one_hot_shot(centroids_num), kmeans.labels_))
 
 
 def make_consistent_samples(labels, track_duration):
@@ -61,10 +67,8 @@ def make_consistent_samples(labels, track_duration):
 def build_model(output_dim, input_dim=None, input_shape=None):
     """Build keras model"""
     model = Sequential()
-    model.add(Dense(output_dim=13, input_dim=13))
-    model.add(Activation("relu"))
-    model.add(Dense(output_dim=13))
-    model.add(Activation("softmax"))
+    model.add(Dense(13, input_dim=13, init="normal", activation="relu"))
+    model.add(Dense(4, init="normal", activation="softmax"))
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
 
@@ -91,7 +95,8 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
         test_mfccs = audio_to_mfcc(test_track)
         print model.evaluate(test_mfccs, labels, batch_size=32)
     predict_mfccs = audio_to_mfcc(prediction_track)
-    return model.predict_classes(predict_mfccs, batch_size=32)
+    prediction = model.predict(predict_mfccs, batch_size=32)
+    return prediction
 
 if __name__ == "__main__":
      train_track, prediction_track, instruments_num = sys.argv[1:]
