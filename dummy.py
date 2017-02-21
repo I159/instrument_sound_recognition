@@ -30,7 +30,7 @@ def audio_to_mfcc(audio_path):
 
 def tag_frames(mfccs, centroids_num):
     kmeans = KMeans(n_clusters=centroids_num, random_state=0).fit(mfccs)
-    return kmeans.labels_
+    return np.array([[i]*mfccs.shape[1] for i in kmeans.labels_])
 
 
 def make_consistent_samples(labels, track_duration):
@@ -83,13 +83,15 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     :param train_track_annotaion: number of centroids
     :param test_track: path to an audio file with consistent instruments to test prediction.
     """
-    train_mfccs = np.zeros((256, 13))#audio_to_mfcc(train_track)
-    labels = np.zeros((256, 13))#tag_frames(train_mfccs, instruments_num)
+    train_mfccs = audio_to_mfcc(train_track)
+    labels = tag_frames(train_mfccs, instruments_num)
     model = build_model(output_dim=13)
     fit(model, train_mfccs, labels)
     if test_track:
-        print model.evaluate(test_track, labels, batch_size=32)
-    return model.predict_classes(prediction_track, batch_size=32)
+        test_mfccs = audio_to_mfcc(test_track)
+        print model.evaluate(test_mfccs, labels, batch_size=32)
+    predict_mfccs = audio_to_mfcc(prediction_track)
+    return model.predict_classes(predict_mfccs, batch_size=32)
 
 if __name__ == "__main__":
      train_track, prediction_track, instruments_num = sys.argv[1:]
