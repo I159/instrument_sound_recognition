@@ -35,7 +35,7 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
     Could be needed for manual analysis."""
     sample = np.argmax(labels, 1)
     divide_idxs = [(0, len(sample)-1)]
-    consistent = [[], [], [], []]
+    consistent = [[] for _ in range(len(labels[0]))]
     while divide_idxs:
         idxs = divide_idxs.pop()
         curr_sample = sample[idxs[0]: idxs[1]]
