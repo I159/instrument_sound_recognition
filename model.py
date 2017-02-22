@@ -1,9 +1,12 @@
-import librosa
+import pprint
 import sys
-from sklearn.cluster import KMeans
-import numpy as np
+
 from keras.models import Sequential
 from keras.layers import Dense, Activation
+import librosa
+import numpy as np
+from sklearn.cluster import KMeans
+
 
 def audio_to_mfcc(audio_path):
     y, sr = librosa.load(audio_path)
@@ -32,7 +35,7 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
     Could be needed for manual analysis."""
     sample = np.argmax(labels, 1)
     divide_idxs = [(0, len(sample)-1)]
-    consistent = []
+    consistent = [[], [], [], []]
     while divide_idxs:
         idxs = divide_idxs.pop()
         curr_sample = sample[idxs[0]: idxs[1]]
@@ -46,7 +49,7 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
             divide_idxs.append((idxs[0], median))
             divide_idxs.append((median, idxs[1]))
         else:
-            consistent.append(idxs)
+            consistent[np.argmax(counts)].append(idxs)
     return consistent
 
 
@@ -83,7 +86,7 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     predict_mfccs = audio_to_mfcc(prediction_track)
     prediction = model.predict(predict_mfccs, batch_size=32)
     consistent_samples = make_consistent_samples(prediction, 0, 0.4)
-    print(consistent_samples)
+    pprint.pprint(consistent_samples)
 
 if __name__ == "__main__":
     train_track, prediction_track, instruments_num = sys.argv[1:]
