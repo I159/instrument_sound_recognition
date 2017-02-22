@@ -1,8 +1,9 @@
 import pprint
 import sys
 
-from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import convolutional as cnn
+from keras.models import Sequential, Model
+from keras.layers import Dense, Activation, normalization, advanced_activations, pooling, core
 import librosa
 import numpy as np
 from sklearn.cluster import KMeans
@@ -58,6 +59,52 @@ def build_model(output_dim, input_dim=None, input_shape=None):
     model = Sequential()
     model.add(Dense(13, input_dim=13, init="normal", activation="relu"))
     model.add(Dense(4, init="normal", activation="softmax"))
+    model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+    return model
+
+
+def build_cnn_model():
+    channel_axis = 1
+    freq_axis = 2
+    input_shape = (13260, 13)
+
+    melgram_input = Input(shape=input_shape)
+    x = normalization.BatchNormalization(axis=freq_axis, name='bn_0_freq')(melgram_input)
+
+    # Conv block 1
+    x = cnn.Convolution2D(64, 3, 3, border_mode='same', name='conv1')(x)
+    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
+    x = advanced_activations.ELU()(x)
+    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool1')(x)
+
+    # Conv block 2
+    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv2')(x)
+    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
+    x = advanced_activations.ELU()(x)
+    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool2')(x)
+
+    # Conv block 3
+    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv3')(x)
+    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
+    x = advanced_activations.ELU()(x)
+    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool3')(x)
+
+    # Conv block 4
+    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv4')(x)
+    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
+    x = advanced_activations.ELU()(x)
+    x = pooling.MaxPooling2D(pool_size=(3, 5), name='pool4')(x)
+
+    # Conv block 5
+    x = cnn.Convolution2D(64, 3, 3, border_mode='same', name='conv5')(x)
+    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn5')(x)
+    x = advanced_activations.ELU()(x)
+    x = pooling.MaxPooling2D(pool_size=(4, 4), name='pool5')(x)
+
+    # Output
+    x = core.Flatten()(x)
+    # Create model
+    model = Model(melgram_input, x)
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
 
