@@ -82,14 +82,12 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     fit(model, train_mfccs, labels)
     if test_track:
         test_mfccs = audio_to_mfcc(test_track)
-        print model.evaluate(test_mfccs, labels, batch_size=32)
+        print(model.evaluate(test_mfccs, labels, batch_size=32))
     predict_mfccs = audio_to_mfcc(prediction_track)
     prediction = model.predict(predict_mfccs, batch_size=32)
     return prediction
 
 if __name__ == "__main__":
-    np.set_printoptions(threshold=np.nan)
-    #print main("/Users/pgyschuk/Downloads/Within_Temptation_Ice_Queen.mp3", "/Users/pgyschuk/Downloads/Within_Temptation_Ice_Queen.mp3", 4) #"/Users/pgyschuk/Downloads/Within_Temptation_Mother_Earth.mp3"
     train_track, prediction_track, instruments_num = sys.argv[1:]
     test_track = sys.argv[4] if len(sys.argv) == 5 else None
-    print main(train_track, prediction_track, int(instruments_num), test_track)
+    print(main(train_track, prediction_track, int(instruments_num), test_track))
