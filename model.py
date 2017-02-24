@@ -3,7 +3,7 @@ import sys
 
 from keras.layers import convolutional as cnn
 from keras.models import Sequential, Model
-from keras.layers import Dense, Activation, normalization, advanced_activations, pooling, core
+from keras.layers import Dense, Activation, normalization, advanced_activations, pooling, core, Input
 import librosa
 import numpy as np
 from keras.layers import Dense
@@ -77,11 +77,12 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
     return sorted(consistent_list, key=lambda x: x.sample[0])
 
 
-def build_model(output_dim, input_dim=None, input_shape=None):
+def build_model(output_dim, input_dim, tag_num):
     """Build keras model"""
     model = Sequential()
-    model.add(Dense(13, input_dim=13, init="normal", activation="relu"))
-    model.add(Dense(4, init="normal", activation="softmax"))
+    model.add(Dense(output_dim, input_dim=input_dim, init="normal", activation="relu"))
+    model.add(Dense(output_dim, init="normal", activation="softmax"))
+    model.add(Dense(tag_num, init="normal", activation="softmax"))
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
     return model
 
@@ -95,7 +96,7 @@ def build_cnn_model():
     x = normalization.BatchNormalization(axis=freq_axis, name='bn_0_freq')(melgram_input)
 
     # Conv block 1
-    x = cnn.Convolution2D(64, 3, 3, border_mode='same', name='conv1')(x)
+    x = cnn.Convolution2D(64, 4, 4, border_mode='same', name='conv1')(x)
     x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
     x = advanced_activations.ELU()(x)
     x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool1')(x)
@@ -148,7 +149,8 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     """
     _, train_mfccs = audio_to_mfcc(train_track)
     labels = tag_frames(train_mfccs, instruments_num)
-    model = build_model(output_dim=13)
+    model = build_model(64, train_mfccs.shape[1], labels.shape[1])
+    # model = build_cnn_model()
     fit(model, train_mfccs, labels)
     if test_track:
         _,test_mfccs = audio_to_mfcc(test_track)
