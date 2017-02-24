@@ -4,7 +4,7 @@ import sys
 
 from keras.layers import convolutional as cnn
 from keras.models import Sequential, Model
-from keras.layers import Dense, Activation, normalization, advanced_activations, pooling, core, Input
+from keras.layers import Dense, Activation, Convolution1D, MaxPooling1D, Flatten
 import librosa
 import numpy as np
 from keras.layers import Dense
@@ -94,49 +94,21 @@ def build_model(output_dim, input_dim, tag_num):
     return model
 
 
-def build_cnn_model():
-    channel_axis = 1
-    freq_axis = 2
-    input_shape = (13260, 13)
-
-    melgram_input = Input(shape=input_shape)
-    x = normalization.BatchNormalization(axis=freq_axis, name='bn_0_freq')(melgram_input)
-
-    # Conv block 1
-    x = cnn.Convolution2D(64, 4, 4, border_mode='same', name='conv1')(x)
-    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
-    x = advanced_activations.ELU()(x)
-    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool1')(x)
-
-    # Conv block 2
-    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv2')(x)
-    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
-    x = advanced_activations.ELU()(x)
-    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool2')(x)
-
-    # Conv block 3
-    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv3')(x)
-    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
-    x = advanced_activations.ELU()(x)
-    x = pooling.MaxPooling2D(pool_size=(2, 4), name='pool3')(x)
-
-    # Conv block 4
-    x = cnn.Convolution2D(128, 3, 3, border_mode='same', name='conv4')(x)
-    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
-    x = advanced_activations.ELU()(x)
-    x = pooling.MaxPooling2D(pool_size=(3, 5), name='pool4')(x)
-
-    # Conv block 5
-    x = cnn.Convolution2D(64, 3, 3, border_mode='same', name='conv5')(x)
-    x = normalization.BatchNormalization(axis=channel_axis, mode=0, name='bn5')(x)
-    x = advanced_activations.ELU()(x)
-    x = pooling.MaxPooling2D(pool_size=(4, 4), name='pool5')(x)
-
-    # Output
-    x = core.Flatten()(x)
-    # Create model
-    model = Model(melgram_input, x)
-    model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+def build_cnn_model(): #output_dim, input_dim, tag_num):
+    model = Sequential((
+        # The first conv layer learns `nb_filter` filters (aka kernels), each of size ``(filter_length, nb_input_series)``.
+        # Its output will have shape (None, window_size - filter_length + 1, nb_filter), i.e., for each position in
+        # the input timeseries, the activation of each filter at that position.
+        cnn.Convolution1D(nb_filter=64, filter_length=13, activation='relu', input_shape=(None, 13), batch_input_shape=(13,)),
+        MaxPooling1D(),     # Downsample the output of convolution by 2X.
+        cnn.Convolution1D(nb_filter=64, filter_length=13, activation='relu'),
+        MaxPooling1D(),
+        Flatten(),
+        Dense(4, activation='softmax'),     # For binary classification, change the activation to 'sigmoid'
+    ))
+    model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+    # To perform (binary) classification instead:
+    # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
     return model
 
 
@@ -156,8 +128,8 @@ def main(train_track, prediction_track, instruments_num, test_track=None):
     """
     _, train_mfccs = audio_to_mfcc(train_track)
     labels = tag_frames(train_mfccs, instruments_num)
-    model = build_model(64, train_mfccs.shape[1], labels.shape[1])
-    # model = build_cnn_model()
+    # model = build_model(64, train_mfccs.shape[1], labels.shape[1])
+    model = build_cnn_model()#train_mfccs.shape[1])
     fit(model, train_mfccs, labels)
     if test_track:
         _,test_mfccs = audio_to_mfcc(test_track)
