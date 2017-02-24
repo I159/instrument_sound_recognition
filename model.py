@@ -1,4 +1,5 @@
 import collections
+import itertools
 import sys
 
 from keras.layers import convolutional as cnn
@@ -32,6 +33,11 @@ def tag_frames(mfccs, centroids_num):
     kmeans = KMeans(n_clusters=centroids_num, random_state=0).fit(mfccs)
     one_hot_shot = __one_hot_shot(centroids_num)
     return np.array([one_hot_shot(i) for i in kmeans.labels_])
+
+def __to_time_sample(x):
+    tmpl = "{:.0f}:{:.0f}-{:.0f}:{:.0f}"
+    time_ = itertools.chain(divmod(x.sample[0], 60), divmod(x.sample[1], 60))
+    return tmpl.format(*time_)
 
 def make_consistent_samples(labels, track_duration, optimal_entropy):
     """Determine continuous consistent intervals of audio with the same tag.
@@ -74,7 +80,8 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
         except IndexError:
             break
 
-    return sorted(consistent_list, key=lambda x: x.sample[0])
+    consistent_list = sorted(consistent_list, key=lambda x: x.sample[0])
+    return [TimeFrame(i.tag, __to_time_sample(i))  for i in consistent_list]
 
 
 def build_model(output_dim, input_dim, tag_num):
