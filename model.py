@@ -1,3 +1,4 @@
+import collections
 import sys
 
 from keras.layers import convolutional as cnn
@@ -38,7 +39,7 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
     Could be needed for manual analysis."""
     sample = np.argmax(labels, 1)
     divide_idxs = [(0, len(sample)-1)]
-    consistent = [[] for _ in range(len(labels[0]))]
+    TimeFrame = collections.namedtuple("TimeFrame", ("tag", "sample"))
     consistent_list=[]
     while divide_idxs:
         idxs = divide_idxs.pop()
@@ -55,8 +56,25 @@ def make_consistent_samples(labels, track_duration, optimal_entropy):
         else:
             frame_per_second = len(labels)//track_duration;
             time_frame=[idxs[0]//frame_per_second, idxs[1]//frame_per_second]
-            consistent_list.insert(0, [np.argmax(counts), time_frame])
-    return consistent_list
+            item = TimeFrame(np.argmax(counts), time_frame)
+            if item not in consistent_list and item.sample[1] - item.sample[0]:
+                consistent_list.insert(0, item)
+
+    consistent_list.sort()
+    idx = 0
+    while True:
+        try:
+            curr = consistent_list[idx]
+            next_ = consistent_list[idx+1]
+            if curr.tag == next_.tag and curr.sample[1] == next_.sample[0]:
+                consistent_list[idx].sample[1] = consistent_list[idx+1].sample[1]
+                del consistent_list[idx+1]
+            else:
+                idx += 1
+        except IndexError:
+            break
+
+    return sorted(consistent_list, key=lambda x: x.sample[0])
 
 
 def build_model(output_dim, input_dim=None, input_shape=None):
