@@ -26,9 +26,15 @@ def __one_hot_shot(num):
 
 
 def tag_frames(mfccs, centroids_num):
-    kmeans = KMeans(n_clusters=centroids_num, random_state=0).fit(mfccs)
+    clustering = KMeans(n_clusters=centroids_num, random_state=0)
+    kmeans1 = clustering.fit(mfccs[0:,0])
+    kmeans2 = clustering.fit(mfccs[0:,1])
     one_hot_shot = __one_hot_shot(centroids_num)
-    return np.array([one_hot_shot(i) for i in kmeans.labels_])
+    hot_labels1 = np.array([one_hot_shot(i) for i in kmeans1.labels_])
+    hot_labels2 = np.array([one_hot_shot(i) for i in kmeans2.labels_])
+    labels = np.dstack((hot_labels1, hot_labels2))
+    return labels.reshape((labels.shape[0], labels.shape[2], labels.shape[1]))
+
 
 def __to_time_sample(x):
     tmpl = "{:.0f}:{:.0f}-{:.0f}:{:.0f}"
