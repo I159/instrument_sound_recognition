@@ -9,12 +9,17 @@ from sklearn.cluster import KMeans
 
 
 def audio_to_mfcc(audio_path):
-    y, sr = librosa.load(audio_path)
+    y, sr = librosa.load(audio_path, mono=False)
     duration = librosa.get_duration(y=y, sr=sr)
-    S = librosa.feature.melspectrogram(y, sr=sr)
-    log_S = librosa.logamplitude(S, ref_power=np.max)
-    mfcc = librosa.feature.mfcc(S=log_S, n_mfcc=13)
-    return duration, mfcc.reshape(tuple(reversed(mfcc.shape)))
+    S1 = librosa.feature.melspectrogram(y[0], sr=sr)
+    S2 = librosa.feature.melspectrogram(y[1], sr=sr)
+    log_S1 = librosa.logamplitude(S1, ref_power=np.max)
+    log_S2 = librosa.logamplitude(S2, ref_power=np.max)
+    mfcc1 = librosa.feature.mfcc(S=log_S1, n_mfcc=13)
+    mfcc2 = librosa.feature.mfcc(S=log_S2, n_mfcc=13)
+
+    mfcc = np.dstack((mfcc1, mfcc2))
+    return duration, mfcc.reshape((mfcc.shape[1], mfcc.shape[2], mfcc.shape[0]))
 
 
 def __one_hot_shot(num):
