@@ -3,8 +3,11 @@ import itertools
 import sys
 
 import numpy as np
-from keras.layers import Dense
-from keras.models import Sequential
+from keras.layers import convolutional as cnn
+from keras.models import Sequential, Model
+from keras.layers import Dense, Activation, Flatten
+from keras.layers import Convolution2D, MaxPooling2D, Dropout, Convolution1D, MaxPooling1D
+
 from sklearn.cluster import KMeans
 
 
@@ -19,20 +22,33 @@ def build_model(output_dim, input_dim, tag_num):
 
 
 def build_cnn_model(): #output_dim, input_dim, tag_num):
-    model = Sequential((
-        # The first conv layer learns `nb_filter` filters (aka kernels), each of size ``(filter_length, nb_input_series)``.
-        # Its output will have shape (None, window_size - filter_length + 1, nb_filter), i.e., for each position in
-        # the input timeseries, the activation of each filter at that position.
-        cnn.Convolution1D(nb_filter=64, filter_length=13, activation='relu', input_shape=(None, 13), batch_input_shape=(13,)),
-        MaxPooling1D(),     # Downsample the output of convolution by 2X.
-        cnn.Convolution1D(nb_filter=64, filter_length=13, activation='relu'),
-        MaxPooling1D(),
-        Flatten(),
-        Dense(4, activation='softmax'),     # For binary classification, change the activation to 'sigmoid'
-    ))
-    model.compile(loss='mse', optimizer='adam', metrics=['mae'])
-    # To perform (binary) classification instead:
-    # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
+    model = Sequential()
+
+    # input image dimensions
+    # rows, cols = 33, 70
+    # number of convolutional filters to use
+    nb_filters = 32
+    # size of pooling area for max pooling
+    nb_pool = 2
+    # convolution kernel size
+    nb_conv = 3
+
+    model.add(Convolution1D(63, 3, border_mode='valid', input_shape=(None, 13)))
+    model.add(Activation('sigmoid'))
+    model.add(Convolution1D(63, 3))
+    model.add(Activation('sigmoid'))
+    model.add(MaxPooling1D())
+    model.add(Dropout(0.25))
+
+    # model.add(Flatten())
+    model.add(Dense(128))
+    model.add(Activation('sigmoid'))
+    model.add(Dropout(0.5))
+    model.add(Dense(4)) # 4 classes
+    model.add(Activation('softmax'))
+
+    model.compile(loss='categorical_crossentropy', optimizer='adadelta')
+
     return model
 
 
