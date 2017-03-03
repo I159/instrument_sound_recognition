@@ -10,6 +10,7 @@ def parse_tags(tag_file_path):
     # rap = tag_list["acoustic"][tag_list["acoustic"] == "rap"]
     # rap.index[0]
 
+
 def get_tagger(tags, train_map):
     def tagger(track_name):
         track_id = track_name.split(".")[0]
@@ -37,4 +38,9 @@ def get_mfcc_data_set(dir_path, tags, train_map):
     tags = [i for i in map(tagger, file_names) if i is not None]
     mfcc_parcer = get_mfcc_parser(dir_path)
     filtered_ids, tags = zip(*tags)
-    return tags, [mfcc_parcer(i) for i in filtered_ids]
+
+    mfccs = (mfcc_parcer(i) for i in filtered_ids)
+    # TODO: pad tracks to a standard size
+    std_mfccs = [np.lib.pad(i, ((0,0), (10, 10)), 'constant', constant_values=(0,0)) for i in mfccs]
+
+    return tags, np.array()

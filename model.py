@@ -22,6 +22,21 @@ def build_model(output_dim, input_dim, tag_num):
 
 
 def build_cnn_model(): #output_dim, input_dim, tag_num):
+    # model.add(Convolution2D(nb_filters, nb_conv, nb_conv, border_mode='valid', input_shape=(1, img_rows, img_cols)))
+    # model.add(Activation('sigmoid'))
+    # model.add(Convolution2D(nb_filters, nb_conv, nb_conv))
+    # model.add(Activation('sigmoid'))
+    # model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
+    # model.add(Dropout(0.25))
+    # model.add(Flatten())
+
+    # model.add(Dense(128))
+    # model.add(Activation('sigmoid'))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(4)) # 4 classes
+    # model.add(Activation('softmax'))
+
+    # model.compile(loss='categorical_crossentropy', optimizer='adadelta')
     model = Sequential()
 
     # input image dimensions
@@ -33,14 +48,14 @@ def build_cnn_model(): #output_dim, input_dim, tag_num):
     # convolution kernel size
     nb_conv = 3
 
-    model.add(Convolution1D(63, 3, border_mode='valid', input_shape=(None, 13)))
+    model.add(Convolution2D(63, 3, 3, border_mode='valid', input_shape=(13, 128, 128)))
     model.add(Activation('sigmoid'))
-    model.add(Convolution1D(63, 3))
+    model.add(Convolution2D(63, 3, 3))
     model.add(Activation('sigmoid'))
-    model.add(MaxPooling1D())
+    model.add(MaxPooling2D())
     model.add(Dropout(0.25))
 
-    # model.add(Flatten())
+    model.add(Flatten())
     model.add(Dense(128))
     model.add(Activation('sigmoid'))
     model.add(Dropout(0.5))

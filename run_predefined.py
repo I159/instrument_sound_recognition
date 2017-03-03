@@ -18,8 +18,8 @@ def main():
     train_map = ps.read_csv(CONFIG.get("DATASETS", "train_tags_file"), sep='\t')
     test_map = ps.read_csv(CONFIG.get("DATASETS", "test_tags_file"), sep='\t')
 
-    train_tags, train_mfccs = get_mfcc_data_set(CONFIG.get("DATASETS", "mfcc_dir"), tags, train_map)
-    test_tags, test_mfccs = get_mfcc_data_set(CONFIG.get("DATASETS", "mfcc_dir"), tags, train_map)
+    train_tags, train_mfccs = get_mfcc_data_set(CONFIG.get("DATASETS", "mfcc_dir"), tags, train_map[:200])
+    test_tags, test_mfccs = get_mfcc_data_set(CONFIG.get("DATASETS", "mfcc_dir"), tags, train_map[:100])
 
     model = build_cnn_model()
     fit(model, train_mfccs, train_tags)
