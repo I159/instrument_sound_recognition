@@ -39,27 +39,18 @@ def build_cnn_model(): #output_dim, input_dim, tag_num):
     # model.compile(loss='categorical_crossentropy', optimizer='adadelta')
     model = Sequential()
 
-    # input image dimensions
-    # rows, cols = 33, 70
-    # number of convolutional filters to use
-    nb_filters = 32
-    # size of pooling area for max pooling
-    nb_pool = 2
-    # convolution kernel size
-    nb_conv = 3
-
-    model.add(Convolution2D(63, 3, 3, border_mode='valid', input_shape=(13, 128, 128)))
+    model.add(Convolution2D(3, 1, 20, border_mode='valid', input_shape=(1, 20, 33000)))
     model.add(Activation('sigmoid'))
-    model.add(Convolution2D(63, 3, 3))
+    model.add(Convolution2D(3, 1, 1))
     model.add(Activation('sigmoid'))
-    model.add(MaxPooling2D())
+    model.add(MaxPooling2D(pool_size=(1, 1), dim_ordering="tf"))
     model.add(Dropout(0.25))
 
     model.add(Flatten())
     model.add(Dense(128))
     model.add(Activation('sigmoid'))
     model.add(Dropout(0.5))
-    model.add(Dense(4)) # 4 classes
+    model.add(Dense(93)) # 4 classes
     model.add(Activation('softmax'))
 
     model.compile(loss='categorical_crossentropy', optimizer='adadelta')
@@ -68,7 +59,7 @@ def build_cnn_model(): #output_dim, input_dim, tag_num):
 
 
 def fit(model, mfccs, labels):
-    model.fit(mfccs, labels, nb_epoch=5, batch_size=32)
+    model.fit(mfccs, labels, nb_epoch=25, batch_size=4)
 
 
 def predict(model, mfccs):

@@ -36,26 +36,24 @@ def get_mfcc_parser(dir_path):
 def get_standardizer(std_len):
     def reshape(mfcc_vector):
         pad_len = (std_len - mfcc_vector.shape[1]) / 2
-        print(mfcc_vector.shape)
-        reshaped =  np.lib.pad(
+        padded = np.lib.pad(
             mfcc_vector,
             ((0, 0), (int(pad_len), math.ceil(pad_len))),
             'constant',
             constant_values=(0, 0)
         )
-        print(reshaped.shape, "\n~~~~~~~~~~~~~~~~~~~~\n")
-        return reshaped
+        return padded.reshape(1, *padded.shape)
     return reshape
 
 
 def get_mfcc_data_set(dir_path, tags, train_map):
     file_names = os.listdir(dir_path)
     tagger = get_tagger(tags, train_map)
-    tags = [i for i in map(tagger, file_names) if i is not None]
+    indexed_tags = [i for i in map(tagger, file_names) if i is not None]
     mfcc_parcer = get_mfcc_parser(dir_path)
-    filtered_ids, tags = zip(*tags)
+    filtered_ids, tags = zip(*indexed_tags)
 
     mfccs = [mfcc_parcer(i) for i in filtered_ids]
     max_arr = math.ceil(max(mfccs, key=lambda x: x.shape[1]).shape[1]/1000)*1000
     standardizer = get_standardizer(max_arr)
-    return tags, np.array([standardizer(i) for i in mfccs])
+    return np.array(tags), np.array([standardizer(i) for i in mfccs])
