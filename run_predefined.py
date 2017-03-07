@@ -22,7 +22,7 @@ def main():
     test_tags, test_mfccs = get_mfcc_data_set(CONFIG.get("DATASETS", "mfcc_dir"), tags, train_map[:100])
 
     model = build_cnn_model()
-    fit(model, train_mfccs, train_tags)
+    fit(model, train_mfccs, train_tags, (test_mfccs, test_tags))
 
 if __name__ == "__main__":
     main()
