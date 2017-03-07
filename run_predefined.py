@@ -5,7 +5,7 @@ import sys
 
 import pandas as ps
 
-from model import build_cnn_model, fit
+from model import build_cnn_model, fit, predict
 from txt_processing import parse_tags, get_mfcc_data_set
 
 CONFIG = ConfigParser()
@@ -23,6 +23,7 @@ def main():
 
     model = build_cnn_model()
     fit(model, train_mfccs, train_tags, (test_mfccs, test_tags))
+    print(predict(model, test_mfccs))
 
 if __name__ == "__main__":
     main()

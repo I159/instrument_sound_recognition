@@ -44,8 +44,9 @@ def build_cnn_model():
 
 
 def fit(model, mfccs, labels, validation_data):
-    model.fit(mfccs, labels, nb_epoch=25, batch_size=4, validation_data=validation_data)
+    model.fit(mfccs, labels, nb_epoch=25, batch_size=4, validation_split=0.33, validation_data=validation_data)
+    metrics = model.evaluate(*validation_data, verbose=0)
 
 
 def predict(model, mfccs):
-    model.predict_classes(mfccs, batch_size=32)
+    return model.predict(mfccs, batch_size=4)
